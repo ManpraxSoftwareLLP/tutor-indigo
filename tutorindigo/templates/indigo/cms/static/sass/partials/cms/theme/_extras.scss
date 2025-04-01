@@ -3,3 +3,75 @@
 #main{
     background-color: $secondary;
 }
+
+
+
+// Manprax
+
+/*  Problem Xblock (Studioo View) */
+
+.wrapper-comp-settings.metadata_edit.is-active ~ #mx-problem-img {
+    display: block;
+}
+
+.wrapper-comp-settings.metadata_edit.is-inactive ~ #mx-problem-img {
+    display: none;
+}
+
+#mx-problem-img {
+    padding: 10px; 
+    margin-left: 15px; 
+    border-top: 1px solid #e5e5e5;
+}
+
+#mx-problem-img h2 {
+    float: left;
+    width: 25%;
+}
+
+#mx-problem-img .image-upload-wrap {
+    float: left;
+    width: 65%;
+}
+
+#mx-problem-img .image_upload {
+    width: 60%;
+    border: 1px solid #e5e5e5;
+}
+
+#mx-problem-img img {
+    height: 50px;
+    width: 50px;
+}
+
+/*  Problem Xblock (Student View) */
+
+#mx-problem .notification-submit, #mx-problem .notification-gentle-alert, #mx-problem .notification-show-answer {
+    display: none;
+}
+
+#mx-problem .indicator-container {
+    display: none;
+}
+
+#mx-problem .choicegroup_incorrect, #mx-problem .choicegroup_correct {
+    border: 2px solid #e4e4e4;
+}
+
+#mx-problem .problem-action-btn {
+    display: none;
+}
+
+
+#mx-problem .feedback-hint-incorrect,  #mx-problem .feedback-hint-correct{
+    display: none;
+}
+
+.question-image img {
+    max-width: 200px;
+    max-height: 200px;
+}
+
+#mx-problem {
+    padding-top: 0px;
+}

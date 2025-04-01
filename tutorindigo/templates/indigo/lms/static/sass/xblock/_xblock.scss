@@ -272,3 +272,38 @@
         color: $text-color-d;
     }
 }
+
+
+// Manprax
+
+/*  Problem Xblock (Student View) */
+
+#mx-problem .notification-submit, #mx-problem .notification-gentle-alert, #mx-problem .notification-show-answer {
+    display: none;
+}
+
+#mx-problem .indicator-container {
+    display: none;
+}
+
+#mx-problem .choicegroup_incorrect, #mx-problem .choicegroup_correct {
+    border: 2px solid #e4e4e4;
+}
+
+#mx-problem .problem-action-btn {
+    display: none;
+}
+
+
+#mx-problem .feedback-hint-incorrect,  #mx-problem .feedback-hint-correct{
+    display: none;
+}
+
+.question-image img {
+    max-width: 200px;
+    max-height: 200px;
+}
+
+#mx-problem {
+    padding-top: 0px;
+}
