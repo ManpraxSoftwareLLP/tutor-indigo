@@ -1,0 +1,303 @@
+<%!
+import json
+from django.utils.translation import gettext as _
+%>
+##<%page args="mx_section" expression_filter="h"/>
+<%page args="course_id" expression_filter="h"/>
+
+## <%inherit file="../main.html" />
+
+<!-- <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap4.min.css">
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.js"></script> -->
+
+
+
+<link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap4.min.css">
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap4.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
+
+<style>
+    view-assmt-btn { cursor: pointer; }
+    /* .certificate-btn:disabled { cursor: not-allowed; opacity: 0.5; }  */
+    .wrapper-problem-response, .wrapper-problem-response legend { font-size: 14px;}
+    #quizData li {border-bottom: 1px solid #dee2e6; margin-bottom: 10px;}
+    #quizData li:last-child {border-bottom: none}
+    .wrapper-problem-response .sr {clip: unset; width: auto; height: auto;}
+    .user-attempts {margin-top: 30px;}
+    #assmtTableBody td:nth-child(2) { /* Email column */
+        min-width: 250px; /* Increase width for email */
+        word-wrap: break-word;
+    }
+</style>
+  
+
+<div id="wrapper" class="advanced-intructor">
+    <div id="wrapper" class="advanced-instructor">
+        <div class="container mt-4">
+            <table id="assmtTable" class="table table-striped table-bordered">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Score (%)</th>
+                        <th>Passing Grade (%)</th>
+                        <th>Status</th>
+                        <th>Modified date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                   
+                    <tbody id="assmtTableBody"></tbody>
+            </table>
+            
+            <nav>
+                <ul id="assmt_pagination" class="pagination"></ul>
+            </nav>
+          
+        </div>
+    
+  
+        
+    </div>
+
+    <!-- Modal for Quiz and Question Data -->
+    <div class="modal fade" id="quizModal" tabindex="-1" role="dialog" aria-labelledby="quizModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="quizModalLabel">Assignment and Question Details</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div id="quizData"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap4.min.js"></script>
+
+
+    <script>
+        $(document).ready(function() {
+            function loadAssmtInstructorData(page) {
+                var baseUrl = window.location.origin;
+                var course_id = "${course_id}";
+
+                var url = baseUrl + '/api/mx_catalog/v1/get_assmt_user_data/?course_id=' + course_id + (page ? '&page=' + page : '');
+                $.ajax({
+                    url: url,
+                    type: 'GET',
+                    success: function(response) {
+                        // Populate table
+                        var $tbody = $('#assmtTableBody');
+                        var $pagination = $('#assmt_pagination');
+                        $tbody.empty();
+                        $pagination.empty();
+
+                        if (response.status === 'fail') {
+                            $tbody.append('<tr><td colspan="6">' + response.message + '</td></tr>');
+                            alert(response.message); // Show error message
+                            return;
+                        }
+
+                        // Initialize or update DataTable
+                        if ($.fn.DataTable.isDataTable('#assmtTable')) {
+                            $('#assmtTable').DataTable().clear().destroy();
+                        }
+
+                        var table = $('#assmtTable').DataTable({
+                            "paging": false,
+                            "ordering": true,
+                            "searching": true,
+                            "stateSave": false
+                        });
+
+                        if (response.user_data && response.user_data.length) {
+                            $.each(response.user_data, function(i, user) {
+                                var buttonHtml = '<button class="btn btn-primary view-assmt-btn" data-username="' + user.username + '">View</button>';
+
+                                table.row.add([user.fullname, user.email,user.grade,  user.passing_grade, user.status, user.modified_at, buttonHtml  ]);
+                            });
+                            table.draw();
+                        } else {
+                            $tbody.append('<tr><td colspan="6">No users found.</td></tr>');
+                        }
+
+                   
+
+                        // Populate pagination
+                        var $pagination = $('#assmt_pagination');
+                        $pagination.empty();
+                        if (response.has_previous) {
+                            $pagination.append('<li class="page-item"><a class="page-link" href="#" data-page="' + response.previous_page_number + '">Previous</a></li>');
+                        }
+                        for (var i = 1; i <= response.total_pages; i++) {
+                            $pagination.append(
+                                '<li class="page-item' + (i === response.current_page ? ' active' : '') + '">' +
+                                    '<a class="page-link" href="#" data-page="' + i + '">' + i + '</a>' +
+                                '</li>'
+                            );
+                        }
+                        if (response.has_next) {
+                            $pagination.append('<li class="page-item"><a class="page-link" href="#" data-page="' + response.next_page_number + '">Next</a></li>');
+                        }
+
+                        // Handle pagination clicks
+                        $pagination.find('a').click(function(e) {
+                            e.preventDefault();
+                            var page = $(this).data('page');
+                            loadAssmtInstructorData(page);
+                        });
+
+
+                        // Handle view button clicks
+                        $('.view-assmt-btn').click(function() {
+                            var username = $(this).data('username');
+                            // var button = $(this);
+                            // alert(course_id)
+
+                            $.ajax({
+                                url: baseUrl + '/api/mx_catalog/v1/get_quiz_data/',
+                                method: 'GET',
+                                data: { username: username, course_id: course_id },
+                                success: function(response) {
+                                    console.log('Quiz API response:', response);
+                                    var $quizData = $('#quizData');
+                                    $quizData.empty();
+
+                                    if (response.status === 'fail') {
+                                        $quizData.append('<p>' + response.message + '</p>');
+                                    } else if (response.quiz_data && response.quiz_data.length) {
+                                        $.each(response.quiz_data, function(i, quiz) {
+                                            var quizHtml = '<h6>Assignment Name: ' + quiz.name + '</h6>' +
+                                                // '<p><strong>Block ID:</strong> ' + quiz.block_id + '</p>' +
+                                                // '<p><strong>Course ID:</strong> ' + quiz.course_id + '</p>' +
+                                                // '<p><strong>Role:</strong> ' + quiz.role + '</p>' +
+                                                // '<p><strong>Submitted By:</strong> ' + quiz.submitted_by + '</p>' +
+                                                // '<p><strong>Passed:</strong> ' + (quiz.is_passed ? 'Yes' : 'No') + '</p>' +
+                                                // '<p><strong>Reset:</strong> ' + (quiz.is_reset ? 'Yes' : 'No') + '</p>' +
+                                                // '<p><strong>Created:</strong> ' + quiz.created_at  + '</p>' +
+                                                // '<p><strong>Modified:</strong> ' + quiz.modified_at + '</p>';
+                                                '</p>';
+
+                                            if (quiz.questions && quiz.questions.length) {
+                                                // quizHtml += '<h6>Questions:</h6><ul>';
+                                                    quizHtml += '<ul>';
+                                                $.each(quiz.questions, function(j, question) {
+                                                    quizHtml += '<li>' +
+                                                        // '<p><strong>Block ID:</strong> ' +question.block_id  + '</p>' +
+                                                        '<p><strong>Question & User Answer:</strong> ' + (question.content ? question.content : 'N/A') + '</p>' +
+                                                        // '<p><strong>State:</strong> <pre>' +question.state + '</pre></p>' +
+                                                        '<p class="user-attempts"><strong>Attempts:</strong> ' + question.attempts + '</p>' +
+                                                        // '<p><strong>Created:</strong> ' + question.created_at + '</p>' +
+                                                        // '<p><strong>Modified at:</strong> ' + question.modified_at+ '</p>' +
+                                                        '</li>';
+                                                });
+                                                quizHtml += '</ul>';
+                                            } else {
+                                                quizHtml += '<p>No questions found.</p>';
+                                            }
+
+                                            $quizData.append(quizHtml);
+                                        });
+                                    } else {
+                                        $quizData.append('<p>No quiz data found.</p>');
+                                    }
+
+                                    $('#quizModal').modal('show');
+                                },
+                                error: function(xhr) {
+                                    console.log('Quiz API error:', xhr.responseText);
+                                    var errorMsg = 'Error loading quiz data';
+                                    try {
+                                        var response = JSON.parse(xhr.responseText);
+                                        errorMsg = response.message || errorMsg;
+                                    } catch (e) {
+                                        // Fallback if response is not JSON
+                                    }
+                                    $('#quizData').html('<p>' + errorMsg + '</p>');
+                                    $('#quizModal').modal('show');
+                                }
+                            });
+                        });
+                            
+
+                        
+
+                        function getCookie(name) {
+                            let cookieValue = null;
+                            if (document.cookie && document.cookie !== '') {
+                                const cookies = document.cookie.split(';');
+                                for (let i = 0; i < cookies.length; i++) {
+                                    const cookie = cookies[i].trim();
+                                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                                        break;
+                                    }
+                                }
+                            }
+                            return cookieValue;
+                        }
+                    },
+                    error: function(xhr) {
+                        $('#assmtTableBody').html('<tr><td colspan="6">Error loading data: ' + xhr.statusText + '</td></tr>');
+                    }
+                });
+            }
+
+
+         
+
+            function initializeAssmtInstructor() {
+                if (window.location.hash === '#view-assmt_managment') {
+                    loadAssmtInstructorData();
+                }
+            }
+
+         
+
+            // $('.instructor-nav .btn-link').on('click', function(e) {
+            //     e.preventDefault();
+            //     var $this = $(this),
+            //         sectionName = $this.data('section');
+
+            //     $('.idash-section').addClass('hidden');
+            //     $('#' + sectionName).removeClass('hidden');
+
+            //     if (sectionName === 'assmt_managment') {
+            //         loadAssmtInstructorData();
+            //     }
+
+            //     $('.instructor-nav .btn-link').removeClass('active');
+            //     $this.addClass('active');
+            // });
+
+
+            // Handle hash changes
+            $(window).on('hashchange', function() {
+                initializeAssmtInstructor();
+            });
+
+            // Initialize on page load
+            initializeAssmtInstructor();
+        });
+    </script>
+
+    
+</div>
+
+
