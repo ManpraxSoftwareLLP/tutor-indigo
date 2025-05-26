@@ -316,6 +316,13 @@
     padding-top: 0px;
 }
 
+#mx-problem.mx_has_answer .field{
+    pointer-events: none !important;
+}
+
+#mx-problem.mx_has_answer .field .field-input.input-checkbox label{ 
+    border: 2px solid #e4e4e4 !important;
+}
 
 #content {
    margin-top: 0px;
